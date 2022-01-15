@@ -1,11 +1,7 @@
 import time
 import datetime
-
-import pandas
 import pyupbit
 import numpy as np
-import requests
-import config
 import inspect  # 함수안에서 자기함수 이름 알아내려고
 
 
@@ -254,13 +250,30 @@ class upbit_ticker_data:
         volatility_5days = df['volatility'].mean()
         return volatility_5days
 
-    def ohlcv_proc_00h(self, count=5):
-        """0시 기준으로 1시간 데이타 1일 ohlcv 구하기,
+    def proc_ohlcv(self, count=1, base="00:00:00"):
+        """60분봉으로 1일 ohlcv 구하기,
          데이터 전처리, 요청일이 8일 이상이면 8일씩 잘라서 가공 및 합치기 """
-        if count <= 8:
-            df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                   count=count * 24, to=f'{self.today}' + " 00:00:00")
 
+        list_NewDf = []  # proc_ohlcv 메소드의 df 저장소
+        if count <= 8:
+            if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
+                base = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
+                                         self.now.month, self.now.day,
+                                         self.now.hour)
+                df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
+                                       count=count * 24, to=base)
+                print("now:", base)
+
+            else:
+                start_date = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
+                                               self.now.month, self.now.day)
+                df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
+                                       count=count * 24, to=f'{start_date}' + " " + base)
+                print("Not base:", base)
+
+            print("count*24: %d" % (count * 24))  # 임시
+            print("df: \n", df)  # 임시
+            print("base", base)  # 임시
             df.to_excel("a.xlsx")  # 임시
             df['high'] = df['high'].rolling(24).max()
             df['low'] = df['low'].rolling(24).min()
@@ -268,7 +281,6 @@ class upbit_ticker_data:
 
             df.to_excel("b.xlsx")  # 임시
             count_a = count * 24
-            list_NewDf = []
             print("count_a = %d" % count_a)  # 임시
             for i in range(0, count_a, 24):
                 i_delta = i + 23
@@ -285,32 +297,39 @@ class upbit_ticker_data:
 
             print(list_NewDf)  # 임시
             df = df.iloc[list_NewDf]
+            print(self.ticker, "\n", df)  # 임시
             df.to_excel("c.xlsx")  # 임시
             return df
+
         else:  # 기간이 9일 이상일때
             print("기간      : %d 일" % count)
             print("60분 몇개  : %d" % (count * 24))
             print("192(8일)개로 나눈 나머지     : ", ((count * 24) % 192))
             print("192(8일)개로 나눈 몫        : ", ((count * 24) // 192))
-            count_share = (count * 24) // 192                  # 기간을 나눈 몫
-            count_remainder = (count * 24) % 192               # 나눈 나머지 값
+            count_share = (count * 24) // 192  # 기간을 나눈 몫
+            count_remainder = (count * 24) % 192  # 나눈 나머지 값
             start_date = self.now - datetime.timedelta(count)  # 시작날짜
-            start_date = datetime.datetime(start_date.year,    # 예)2021-12-25 00:00:00 0시로 만들기
+            start_date = datetime.datetime(start_date.year,
                                            start_date.month, start_date.day)
-            print(start_date)
-            for i in range(1, (count_share+1), 1):
+            print("start_date at out of base:", start_date)
+            for i in range(1, (count_share + 1), 1):
                 print("i = %d" % i)
-                to_date_before = start_date + datetime.timedelta(i*8)  # 시작날에서 i값이 증가할때 마다 8일씩 더하기
-                to_date = to_date_before.strftime("%Y%m%d")        # 예)날짜를 20220120 포맷으로 변환
+                to_date_before = start_date + datetime.timedelta(i * 8)  # 시작날에서 i값이 증가할때 마다 8일씩 더하기
+                to_date = to_date_before.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
                 print(to_date)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=8 * 24, to=f'{to_date}' + " 00:00:00")
-                df_all = np.concatenate(df)
+                                       count=8 * 24, to=f'{to_date}' + " " + base)
+
+                list_NewDf.append(i)
                 print(df)
                 time.sleep(0.3)
-            print(df_all)
 
-            return 0
+            print(list_NewDf)  # 임시
+            df = df.iloc[list_NewDf]
+            print(self.ticker, "\n", df)  # 임시
+            df.to_excel("c.xlsx")  # 임시
+
+            return df
 
     def get_ror_200days_00h(self, k=0.5):
         """ 09시 일봉기준 기간 200일"""
@@ -336,4 +355,4 @@ class upbit_ticker_data:
 ########### 클래스 생성  끝 ##########
 
 coin = upbit_ticker_data("KRW-POWR")
-df = coin.ohlcv_proc_00h(count=20)
+df = coin.proc_ohlcv(count=10)
