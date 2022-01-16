@@ -1,5 +1,7 @@
 import time
 import datetime
+
+import pandas as pd
 import pyupbit
 import numpy as np
 import inspect  # 함수안에서 자기함수 이름 알아내려고
@@ -250,11 +252,10 @@ class upbit_ticker_data:
         volatility_5days = df['volatility'].mean()
         return volatility_5days
 
-    def proc_ohlcv(self, count=1, base="00:00:00"):
+    def ohlcv_base_is_now(self, count=1, base="00:00:00"):
         """60분봉으로 1일 ohlcv 구하기,
          데이터 전처리, 요청일이 8일 이상이면 8일씩 잘라서 가공 및 합치기 """
-
-        list_NewDf = []  # proc_ohlcv 메소드의 df 저장소
+        list_NewDf = []  # list_NewDf 는 df의 임시저장소, 전역변수
         if count <= 8:
             if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
                 base = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
@@ -262,14 +263,13 @@ class upbit_ticker_data:
                                          self.now.hour)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
                                        count=count * 24, to=base)
-                print("now:", base)
+
 
             else:
                 start_date = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
                                                self.now.month, self.now.day)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
                                        count=count * 24, to=f'{start_date}' + " " + base)
-                print("Not base:", base)
 
             print("count*24: %d" % (count * 24))  # 임시
             print("df: \n", df)  # 임시
@@ -304,32 +304,59 @@ class upbit_ticker_data:
         else:  # 기간이 9일 이상일때
             print("기간      : %d 일" % count)
             print("60분 몇개  : %d" % (count * 24))
-            print("192(8일)개로 나눈 나머지     : ", ((count * 24) % 192))
-            print("192(8일)개로 나눈 몫        : ", ((count * 24) // 192))
-            count_share = (count * 24) // 192  # 기간을 나눈 몫
-            count_remainder = (count * 24) % 192  # 나눈 나머지 값
+
+            if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
+                base = datetime.datetime(self.now.year, self.now.month, self.now.day, self.now.hour)
+                base = base.strftime('%H:%M:%S')  # ex) 16:00:00
+                print("9일이상 now: ", base)  # 임시
+            else:
+                base = datetime.datetime(self.now.year, self.now.month, self.now.day)
+                base = base.strftime('%H:%M:%S')
+                print("9일이상 Not now: ", base)  # 임시
+
+            count_divide_8 = count // 8  # 8을 나눈 몫, 8일씩 잘라서, 200개 갯수제한, 8일이면 60분본 기준으로 192개 나옴
+            print("count_divide_8 = ", count_divide_8)
+            count_percent_8 = count % 8  # 나눈 나머지 값,   10일기준 1번 서버요청
+            print("count_percent_8 = ", count_percent_8)
             start_date = self.now - datetime.timedelta(count)  # 시작날짜
             start_date = datetime.datetime(start_date.year,
                                            start_date.month, start_date.day)
             print("start_date at out of base:", start_date)
-            for i in range(1, (count_share + 1), 1):
+
+            df_list = []  # df들을 저장할 리스트 변수
+            for i in range(1, count_divide_8 + 1, 1):  # 첫번째 수행, 몫 값에 따라
                 print("i = %d" % i)
+                print("count_divide_8: ", count_divide_8)
                 to_date_before = start_date + datetime.timedelta(i * 8)  # 시작날에서 i값이 증가할때 마다 8일씩 더하기
                 to_date = to_date_before.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
-                print(to_date)
+                print("to_date 값: ", to_date)
+                print("base", base)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=8 * 24, to=f'{to_date}' + " " + base)
+                                       count=190, to=f'{to_date}' + " " + base)
+                df_list.append(df)  # df 들 리스트에 담기
+                time.sleep(0.2)
+            print(df_list)
+            df_1st_total = pd.concat(df_list)
+            print("df 합친후 \n")
+            print(df_1st_total)
+            df_1st_total.to_excel("c.xlsx")
 
-                list_NewDf.append(i)
-                print(df)
-                time.sleep(0.3)
+            # 8일 이하 ohlcv 서버요청
+            to_date_before = self.now
+            to_date = to_date_before.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
+            print("df_2nd base = ", base)
+            print("df_2nd to_date = ", to_date)
+            df_2nd = pyupbit.get_ohlcv(self.ticker,
+                                       interval="minute60",
+                                       count=count_percent_8 * 24,
+                                       to=f'{to_date}' + " " + base)  # count 값에서 +1은 두개의 df 사이에 한시간이 빠져서, 넣었다.
+            print("8일 이후 내에서 count_percent_8: ", df_2nd)
+            df_2nd.to_excel("d.xlsx")
 
-            print(list_NewDf)  # 임시
-            df = df.iloc[list_NewDf]
-            print(self.ticker, "\n", df)  # 임시
-            df.to_excel("c.xlsx")  # 임시
-
-            return df
+            df_all = pd.concat([df_1st_total, df_2nd])
+            print(df_all)  # 임시
+            df_all.to_excel("result.xlsx")
+            return df_all
 
     def get_ror_200days_00h(self, k=0.5):
         """ 09시 일봉기준 기간 200일"""
@@ -354,5 +381,5 @@ class upbit_ticker_data:
 
 ########### 클래스 생성  끝 ##########
 
-coin = upbit_ticker_data("KRW-POWR")
-df = coin.proc_ohlcv(count=10)
+coin = upbit_ticker_data("KRW-OMG")
+df = coin.ohlcv_base_is_now(count=8)
