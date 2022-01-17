@@ -333,6 +333,7 @@ class upbit_ticker_data:
                 print("base", base)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
                                        count=190, to=f'{to_date}' + " " + base)
+                print("df 행갯수: ", len(df))
                 df_list.append(df)  # df 들 리스트에 담기
                 time.sleep(0.2)
             print(df_list)
@@ -355,6 +356,7 @@ class upbit_ticker_data:
 
             df_all = pd.concat([df_1st_total, df_2nd])
             print(df_all)  # 임시
+            print("df_all 길이: ", len(df_all))
             df_all.to_excel("result.xlsx")
             return df_all
 
@@ -382,4 +384,4 @@ class upbit_ticker_data:
 ########### 클래스 생성  끝 ##########
 
 coin = upbit_ticker_data("KRW-OMG")
-df = coin.ohlcv_base_is_now(count=8)
+df = coin.ohlcv_base_is_now(count=9)
