@@ -65,24 +65,27 @@ class upbit_ticker_data:
         df_total['volume'] = df_total['volume'].rolling(24).sum()
 
         df_total.to_excel("b.xlsx")  # 임시
+
+        count_a = count * 24
+
         for i in range(0, count_a, 24):
             i_delta = i + 23
             print("i = %d" % i)  # 임시
             print("i_delta = %d" % i_delta)  # 임시
 
-            df.iloc[i]['high'] = df.iloc[i_delta]['high']
-            df.iloc[i]['low'] = df.iloc[i_delta]['low']
-            df.iloc[i]['close'] = df.iloc[i_delta]['close']
-            df.iloc[i]['volume'] = df.iloc[i_delta]['volume']
-            df.iloc[i]['value'] = df.iloc[i_delta]['value']
+            df_total.iloc[i]['high'] = df_total.iloc[i_delta]['high']
+            df_total.iloc[i]['low'] = df_total.iloc[i_delta]['low']
+            df_total.iloc[i]['close'] = df_total.iloc[i_delta]['close']
+            df_total.iloc[i]['volume'] = df_total.iloc[i_delta]['volume']
+            df_total.iloc[i]['value'] = df_total.iloc[i_delta]['value']
 
             list_NewDf.append(i)  # 최종 행 위치 생성
 
-        print(list_NewDf)  # 임시
-        df = df.iloc[list_NewDf]
+        print("list_NewDf: ", list_NewDf)  # 임시
+        df_total = df_total.iloc[list_NewDf]
         print(self.ticker, "\n", df)  # 임시
-        df.to_excel("c.xlsx")  # 임시
-        return df
+        df_total.to_excel("c.xlsx")  # 임시
+        return df_total
 
 
 ########### 클래스 생성  끝 ##########
