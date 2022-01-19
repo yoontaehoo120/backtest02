@@ -255,110 +255,75 @@ class upbit_ticker_data:
     def ohlcv_base_is_now(self, count=1, base="00:00:00"):
         """60분봉으로 1일 ohlcv 구하기,
          데이터 전처리, 요청일이 8일 이상이면 8일씩 잘라서 가공 및 합치기 """
+        global df
+        df_list = []
         list_NewDf = []  # list_NewDf 는 df의 임시저장소, 전역변수
-        if count <= 8:
-            if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
-                base = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
-                                         self.now.month, self.now.day,
-                                         self.now.hour)
+        print("count: %d" % count)
+        if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
+            end_datetime = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
+                                             self.now.month, self.now.day,
+                                             self.now.hour)
+            start_datetime = end_datetime - datetime.timedelta(count)  # 시작일자 설정
+            print("start_datetime", start_datetime)
+            print("end_datetime", end_datetime)
+
+            for i in range(count, -1, -1):
+                print("\ni = %d" % i)
+                to_datetime = end_datetime - datetime.timedelta(i)
+                print("to_datime: ", to_datetime)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=count * 24, to=base)
+                                       count=24, to=to_datetime)
 
+                df_list.append(df)
+                time.sleep(0.1)
 
-            else:
-                start_date = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
-                                               self.now.month, self.now.day)
+        else:
+
+            end_datetime = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
+                                             self.now.month, self.now.day,
+                                             self.now.hour)
+            start_datetime = end_datetime - datetime.timedelta(count)
+            print("start_datetime", start_datetime)
+            print("end_datetime", end_datetime)
+            for i in range(count, -1, -1):
+                print("\ni = %d" % i)
+                to_datetime = end_datetime - datetime.timedelta(i)
+                to_datetime = to_datetime.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
+                print("to_datime: ", to_datetime)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=count * 24, to=f'{start_date}' + " " + base)
+                                       count=24, to=f'{to_datetime}' + " " + base)
 
-            print("count*24: %d" % (count * 24))  # 임시
-            print("df: \n", df)  # 임시
-            print("base", base)  # 임시
-            df.to_excel("a.xlsx")  # 임시
-            df['high'] = df['high'].rolling(24).max()
-            df['low'] = df['low'].rolling(24).min()
-            df['volume'] = df['volume'].rolling(24).sum()
+                df_list.append(df)
+                time.sleep(0.1)
 
-            df.to_excel("b.xlsx")  # 임시
-            count_a = count * 24
-            print("count_a = %d" % count_a)  # 임시
-            for i in range(0, count_a, 24):
-                i_delta = i + 23
-                print("i = %d" % i)  # 임시
-                print("i_delta = %d" % i_delta)  # 임시
+        df_total = pd.concat(df_list)
+        print(df_total)
+        df_total.to_excel("a.xlsx")  # 임시
+        df_total['high'] = df_total['high'].rolling(24).max()
+        df_total['low'] = df_total['low'].rolling(24).min()
+        df_total['volume'] = df_total['volume'].rolling(24).sum()
+        df_total.to_excel("b.xlsx")  # 임시
 
-                df.iloc[i]['high'] = df.iloc[i_delta]['high']
-                df.iloc[i]['low'] = df.iloc[i_delta]['low']
-                df.iloc[i]['close'] = df.iloc[i_delta]['close']
-                df.iloc[i]['volume'] = df.iloc[i_delta]['volume']
-                df.iloc[i]['value'] = df.iloc[i_delta]['value']
+        count_a = (count * 24) + 1
 
-                list_NewDf.append(i)  # 최종 행 위치 생성
+        for i in range(0, count_a, 24):
+            i_delta = i + 23
+            print("i = %d" % i)  # 임시
+            print("i_delta = %d" % i_delta)  # 임시
 
-            print(list_NewDf)  # 임시
-            df = df.iloc[list_NewDf]
-            print(self.ticker, "\n", df)  # 임시
-            df.to_excel("c.xlsx")  # 임시
-            return df
+            df_total.iloc[i]['high'] = df_total.iloc[i_delta]['high']
+            df_total.iloc[i]['low'] = df_total.iloc[i_delta]['low']
+            df_total.iloc[i]['close'] = df_total.iloc[i_delta]['close']
+            df_total.iloc[i]['volume'] = df_total.iloc[i_delta]['volume']
+            df_total.iloc[i]['value'] = df_total.iloc[i_delta]['value']
 
-        else:  # 기간이 9일 이상일때
-            print("기간      : %d 일" % count)
-            print("60분 몇개  : %d" % (count * 24))
+            list_NewDf.append(i)  # 최종 행 위치 생성
 
-            if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
-                base = datetime.datetime(self.now.year, self.now.month, self.now.day, self.now.hour)
-                base = base.strftime('%H:%M:%S')  # ex) 16:00:00
-                print("9일이상 now: ", base)  # 임시
-            else:
-                base = datetime.datetime(self.now.year, self.now.month, self.now.day)
-                base = base.strftime('%H:%M:%S')
-                print("9일이상 Not now: ", base)  # 임시
-
-            count_divide_8 = count // 8  # 8을 나눈 몫, 8일씩 잘라서, 200개 갯수제한, 8일이면 60분본 기준으로 192개 나옴
-            print("count_divide_8 = ", count_divide_8)
-            count_percent_8 = count % 8  # 나눈 나머지 값,   10일기준 1번 서버요청
-            print("count_percent_8 = ", count_percent_8)
-            start_date = self.now - datetime.timedelta(count)  # 시작날짜
-            start_date = datetime.datetime(start_date.year,
-                                           start_date.month, start_date.day)
-            print("1 start_date at out of base:", start_date)
-
-            df_list = []  # df들을 저장할 리스트 변수
-            for i in range(1, count_divide_8 + 1, 1):  # 첫번째 수행, 몫 값에 따라
-                print("i = %d" % i)
-                print("count_divide_8: ", count_divide_8)
-                to_date_before = start_date + datetime.timedelta(i * 8)  # 시작날에서 i값이 증가할때 마다 8일씩 더하기
-                to_date = to_date_before.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
-                print("to_date 값: ", to_date)
-                print("base", base)
-                df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=192, to="20200105 00:00:00")
-                print("df 행갯수: ", len(df))
-                df_list.append(df)  # df 들 리스트에 담기
-                time.sleep(0.2)
-            print(df_list)
-            df_1st_total = pd.concat(df_list)
-            print("df 합친후 \n")
-            print(df_1st_total)
-            df_1st_total.to_excel("c.xlsx")
-
-            # 8일 이하 ohlcv 서버요청
-            to_date_before = self.now
-            to_date = to_date_before.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
-            print("df_2nd base = ", base)
-            print("df_2nd to_date = ", to_date)
-            df_2nd = pyupbit.get_ohlcv(self.ticker,
-                                       interval="minute60",
-                                       count=count_percent_8 * 24,
-                                       to=f'{to_date}' + " " + base)  # count 값에서 +1은 두개의 df 사이에 한시간이 빠져서, 넣었다.
-            print("8일 이후 내에서 count_percent_8: ", df_2nd)
-            df_2nd.to_excel("d.xlsx")
-
-            df_all = pd.concat([df_1st_total, df_2nd])
-            print(df_all)  # 임시
-            print("df_all 길이: ", len(df_all))
-            df_all.to_excel("result.xlsx")
-            return df_all
+        print("list_NewDf: ", list_NewDf)  # 임시
+        df_total = df_total.iloc[list_NewDf]
+        print(self.ticker, "\n", df_total)  # 임시
+        df_total.to_excel("c.xlsx")  # 임시
+        return df_total
 
     def get_ror_200days_00h(self, k=0.5):
         """ 09시 일봉기준 기간 200일"""

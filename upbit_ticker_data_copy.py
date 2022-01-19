@@ -28,7 +28,7 @@ class upbit_ticker_data:
             print("start_datetime", start_datetime)
             print("end_datetime", end_datetime)
 
-            for i in range(count, 0, -1):
+            for i in range(count, -1, -1):
                 print("\ni = %d" % i)
                 to_datetime = end_datetime - datetime.timedelta(i)
                 print("to_datime: ", to_datetime)
@@ -46,7 +46,7 @@ class upbit_ticker_data:
             start_datetime = end_datetime - datetime.timedelta(count)
             print("start_datetime", start_datetime)
             print("end_datetime", end_datetime)
-            for i in range(count, 0, -1):
+            for i in range(count, -1, -1):
                 print("\ni = %d" % i)
                 to_datetime = end_datetime - datetime.timedelta(i)
                 to_datetime = to_datetime.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
@@ -63,10 +63,9 @@ class upbit_ticker_data:
         df_total['high'] = df_total['high'].rolling(24).max()
         df_total['low'] = df_total['low'].rolling(24).min()
         df_total['volume'] = df_total['volume'].rolling(24).sum()
-
         df_total.to_excel("b.xlsx")  # 임시
 
-        count_a = count * 24
+        count_a = (count * 24) + 1
 
         for i in range(0, count_a, 24):
             i_delta = i + 23
@@ -83,7 +82,7 @@ class upbit_ticker_data:
 
         print("list_NewDf: ", list_NewDf)  # 임시
         df_total = df_total.iloc[list_NewDf]
-        print(self.ticker, "\n", df)  # 임시
+        print(self.ticker, "\n", df_total)  # 임시
         df_total.to_excel("c.xlsx")  # 임시
         return df_total
 
@@ -91,4 +90,4 @@ class upbit_ticker_data:
 ########### 클래스 생성  끝 ##########
 
 coin = upbit_ticker_data("KRW-ETH")
-df = coin.ohlcv_base_is_now(count=20)
+df = coin.ohlcv_base_is_now(count=10, base="now")
