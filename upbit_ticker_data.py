@@ -5,8 +5,9 @@ import pandas as pd
 import pyupbit
 import numpy as np
 import inspect  # 함수안에서 자기함수 이름 알아내려고
-########## 클래스 생성 시작 ##########
 
+
+########## 클래스 생성 시작 ##########
 
 
 class upbit_ticker_data:
@@ -258,16 +259,28 @@ class upbit_ticker_data:
         global df
         df_list = []
         list_NewDf = []  # list_NewDf 는 df의 임시저장소, 전역변수
+        time_shift_flag = False
         print("count: %d" % count)
+        print("self.now.hour: ", self.now.hour)
+
+        if base[3:] == "00:00":  # base 값을 시간지정 할 경우 현재 시간 오버되면 하루 전으로 count 값 변경
+            input_hour = int(base[0:2])
+            if input_hour > self.now.hour:
+                time_shift_flag = True
+                print("time_shift_flag: True")
+
         if base == "now" or base == "NOW" or base == "Now":  # 시간인자 now 이면 현재시각 기준
             end_datetime = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
                                              self.now.month, self.now.day,
                                              self.now.hour)
+            if time_shift_flag:
+                end_datetime = end_datetime - datetime.timedelta(1)
+                print("time_flag = True, end_datetime: ", end_datetime)
             start_datetime = end_datetime - datetime.timedelta(count)  # 시작일자 설정
             print("start_datetime", start_datetime)
             print("end_datetime", end_datetime)
 
-            for i in range(count, -1, -1):
+            for i in range(count - 1, -1, -1):
                 print("\ni = %d" % i)
                 to_datetime = end_datetime - datetime.timedelta(i)
                 print("to_datime: ", to_datetime)
@@ -282,10 +295,15 @@ class upbit_ticker_data:
             end_datetime = datetime.datetime(self.now.year,  # 해당 시간 0분으로 셋팅
                                              self.now.month, self.now.day,
                                              self.now.hour)
+
+            if time_shift_flag:
+                end_datetime = end_datetime - datetime.timedelta(1)
+                print("time_flag = True, end_datetime: ", end_datetime)
+
             start_datetime = end_datetime - datetime.timedelta(count)
             print("start_datetime", start_datetime)
             print("end_datetime", end_datetime)
-            for i in range(count, -1, -1):
+            for i in range(count - 1, -1, -1):
                 print("\ni = %d" % i)
                 to_datetime = end_datetime - datetime.timedelta(i)
                 to_datetime = to_datetime.strftime("%Y%m%d")  # 예)날짜를 20220120 포맷으로 변환
@@ -304,7 +322,7 @@ class upbit_ticker_data:
         df_total['volume'] = df_total['volume'].rolling(24).sum()
         df_total.to_excel("b.xlsx")  # 임시
 
-        count_a = (count * 24) + 1
+        count_a = count * 24
 
         for i in range(0, count_a, 24):
             i_delta = i + 23
