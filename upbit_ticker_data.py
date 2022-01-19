@@ -5,9 +5,9 @@ import pandas as pd
 import pyupbit
 import numpy as np
 import inspect  # 함수안에서 자기함수 이름 알아내려고
-
-
 ########## 클래스 생성 시작 ##########
+
+
 
 class upbit_ticker_data:
     def __init__(self, ticker_name):
@@ -321,7 +321,7 @@ class upbit_ticker_data:
             start_date = self.now - datetime.timedelta(count)  # 시작날짜
             start_date = datetime.datetime(start_date.year,
                                            start_date.month, start_date.day)
-            print("start_date at out of base:", start_date)
+            print("1 start_date at out of base:", start_date)
 
             df_list = []  # df들을 저장할 리스트 변수
             for i in range(1, count_divide_8 + 1, 1):  # 첫번째 수행, 몫 값에 따라
@@ -332,7 +332,7 @@ class upbit_ticker_data:
                 print("to_date 값: ", to_date)
                 print("base", base)
                 df = pyupbit.get_ohlcv(self.ticker, interval="minute60",
-                                       count=190, to=f'{to_date}' + " " + base)
+                                       count=192, to="20200105 00:00:00")
                 print("df 행갯수: ", len(df))
                 df_list.append(df)  # df 들 리스트에 담기
                 time.sleep(0.2)
@@ -383,5 +383,5 @@ class upbit_ticker_data:
 
 ########### 클래스 생성  끝 ##########
 
-coin = upbit_ticker_data("KRW-OMG")
-df = coin.ohlcv_base_is_now(count=9)
+coin = upbit_ticker_data("KRW-ETH")
+df = coin.ohlcv_base_is_now(count=10)
