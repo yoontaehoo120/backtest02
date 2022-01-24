@@ -2,7 +2,7 @@
 # 0시 기준 + 현재가가 5일 이동평균선을 넘는 코인만 매수
 #
 # 최종업데이트 : 2022 01.03
-title = "v101_변동성돌파 + 5일이동평균 전략, (0시기준, 감시가, 목표변동성)"
+title = "v200_변동성돌파 + 5일이동평균 전략, (감시가, 목표변동성)"
 
 import time
 import datetime
@@ -10,22 +10,28 @@ import pyupbit
 import requests
 import slack
 import config
-
+import upbit_ticker_data as td
 
 access = config.UPBIT_ACCESS
 secret = config.UPBIT_SECRET
-
 
 # 슬랙 봇 준비
 token = config.SLACK_TOKEN
 client = slack.WebClient(token=token)
 
-############ 가장 좋은 k값 ##########
+################# PARAM ################################
+PARAM_PORTFOLIO_220124 = {"KRW-ADA": 0.6, "KRW-ONG": 0.8,
+                          "KRW-AXS": 0.5}
+
+# 가장 좋은 k값 #
 best_k = 0.5
 watch_k = 0.2
 
-############ N개 자산 값입력 ############
+# N개 자산 값 입력
 n_number = 6
+
+
+#######################################################
 
 
 # 슬랙 봇 메시지함수
@@ -36,50 +42,9 @@ def post_message(token, channel, text):
                              )
 
 
-def get_target_price(ticker, k=0.5):
-    """변동성 돌파 전략으로 매수 목표가 조회"""
-    print("today: %s in get_target_price" % today)
-    df = pyupbit.get_ohlcv(ticker, interval="minute60",
-                           count=24, to=f'{today}' + " 00:00:00")
-    high = df['high'].max()
-    low = df['low'].min()
-    target_price = df.iloc[23]['close'] + (high - low) * k
-    return target_price
-
-
-def get_ma5(ticker):
-    """5일 이동 평균선 조회"""
-    print("today: %s in get_ma5" % today)
-    df = pyupbit.get_ohlcv(ticker, interval="minute60",
-                           count=117, to=f'{today}' + " 00:00:00")
-    ma5 = df['close'].rolling(117).mean().iloc[-1]
-    return ma5
-
-def get_noise(ticker):
-    """30일 노이즈 평균값 조회"""
-    time.sleep(1)
-    print("today: %s in get_noise" % today)
-    df = pyupbit.get_ohlcv(ticker, interval="minute240",
-                           count=180, to=f'{today}'+" 00:00:00")
-    df['noise'] = 1 - abs(df['open'] - df['close']) / (df['high'] - df['low'])
-    noise = df['noise'].sum() / 180
-    return noise
-
 def get_current_price(ticker):
     """현재가 조회"""
     return pyupbit.get_orderbook(ticker=ticker)["orderbook_units"][0]["ask_price"]
-
-
-# 목표변동성 구하기
-def get_volatility(ticker):
-    print("today: %s in get_volatility" % today)
-    df = pyupbit.get_ohlcv(ticker, count=7)
-    df['volatility'] = (df['high'].shift(-1) - df['low'].shift(-1)) / df['open'] * 100
-
-    # 5일간의 변동성값 평균
-    process_volatility = df['volatility'].iloc[1:6].mean()
-    # print(ticker, "5일간의 변동성 평균값 :", process_volatility)
-    return process_volatility
 
 
 def get_balance(ticker):
@@ -103,7 +68,6 @@ today = now.strftime("%Y%m%d")
 print(today)
 mid = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(1)
 
-
 # 시작 메세지 슬랙 전송
 client.chat_postMessage(channel='#upbit_autotrade', text="전략명: %s\n"
                                                          " - 시작합니다 - today: %s" % (title, today))
@@ -112,29 +76,30 @@ decision = ""
 while True:
 
     try:
-        ############ ticker 모두 얻어오기 ###############
+
+        """ticker 모두 얻어오기 """
         tickers = pyupbit.get_tickers(fiat="KRW")
 
         for ticker in tickers:
 
             now = datetime.datetime.now()
             today = now.strftime("%Y%m%d")
-            target_price = get_target_price(ticker, best_k)
-            # 감시가
-            watch_price = get_target_price(ticker, watch_k)
-            ma5 = get_ma5(ticker)
-            noise = get_noise(ticker)
-            process_volatility = get_volatility(ticker)
+            coin = td.upbit_ticker_data(ticker)
+
+            target_price = coin.get_target_price_min60()
+            watch_price = coin.get_target_price_min60(k=watch_k)
+            ma5 = coin.get_ytday_ma5_60m_00h()
+            noise = coin.get_noise_30day()
+            process_volatility = coin.get_volatility_5days()
 
             if mid < now < mid + datetime.timedelta(seconds=10):
-                target_price = get_target_price(ticker, best_k)
                 mid = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(1)
 
-                # 감시가
-                watch_price = get_target_price(ticker, watch_k)
-                ma5 = get_ma5(ticker)
-                noise = get_noise(ticker)
-                process_volatility = get_volatility(ticker)
+                target_price = coin.get_target_price_min60()
+                watch_price = coin.get_target_price_min60(k=watch_k)
+                ma5 = coin.get_ytday_ma5_60m_00h()
+                noise = coin.get_noise_30day()
+                process_volatility = coin.get_volatility_5days()
                 print("자정 목표가 갱신\n")
 
             current_price = get_current_price(ticker)
@@ -188,6 +153,7 @@ while True:
                                              " -%d개종목대비 투자비율: %d%%\n"
                                              " -목표변동성 1%%: 자산의 %0.2f%% 투자\n"
                                              " -%d개종목대비 투자비율: %d%%\n"
+                                             " -ma5: %0.2f\n"
                                              " -today: %s\n"
                                              " -mid time: %s\n"
                                              "전략명: %s\n"
@@ -199,6 +165,7 @@ while True:
                                                 (target_volatility_2pro / n_number),
                                                 target_volatility_1pro, n_number,
                                                 (target_volatility_1pro / n_number),
+                                                ma5,
                                                 today, mid,
                                                 title))
 
@@ -225,6 +192,7 @@ while True:
                                              " -%d개종목대비 투자비율: %d%%\n"
                                              " -목표변동성 1%%: 자산의 %0.2f%% 투자\n"
                                              " -%d개종목대비 투자비율: %d%%\n"
+                                             " -ma5: %0.2f\n"
                                              " -today: %s\n"
                                              " -mid time: %s\n"
                                              " 전략명: %s\n"
@@ -235,6 +203,7 @@ while True:
                                                 (target_volatility_2pro / n_number),
                                                 target_volatility_1pro, n_number,
                                                 (target_volatility_1pro / n_number),
+                                                ma5,
                                                 today, mid,
                                                 title))
             else:
@@ -245,8 +214,11 @@ while True:
 
             time.sleep(1)
         # 한바퀴 돌아, 메세지 슬랙 전송
-        client.chat_postMessage(channel='#upbit_autotrade', text="%s\n한바퀴 돌았어요. today: %s" % (title, today))
+        print("\n##############################")
+        print("        한바퀴 돌았어요!")
+        print("##############################\n")
 
+        client.chat_postMessage(channel='#upbit_autotrade', text="%s\n한바퀴 돌았어요. today: %s" % (title, today))
 
     except Exception as e:
         print(e)
