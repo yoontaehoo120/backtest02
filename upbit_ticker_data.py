@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 import pyupbit
 import numpy as np
-import inspect  # 함수안에서 자기함수 이름 알아내려고
+# import inspect  # 함수안에서 자기함수 이름 알아내려고
 
 
 ########## 클래스 생성 시작 ##########
@@ -62,11 +62,11 @@ class upbit_ticker_data:
             get_ytday_ma3_60m_00h = df['close'].mean()
             # 데이터 전처리 끝
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             get_ytday_ma3_60m_00h = 0
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
         return get_ytday_ma3_60m_00h
 
     def get_ytday_ma5_60m_00h(self):
@@ -82,12 +82,12 @@ class upbit_ticker_data:
             get_ytday_ma5_60m_00h = df['close'].mean()
             # 데이터 전처리 끝
 
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
-            df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
         else:
             get_ytday_ma5_60m_00h = 0
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
         return get_ytday_ma5_60m_00h
 
     def get_ytday_ma5_60m_now(self):
@@ -108,9 +108,9 @@ class upbit_ticker_data:
 
         else:
             get_ytday_ma5_60m_00h = 0
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
 
         return get_ytday_ma5_60m_00h
 
@@ -134,10 +134,10 @@ class upbit_ticker_data:
             get_ytday_ma10_60m_00h = df['close'].mean()
             # 데이터 전처리 끝
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             get_ytday_ma10_60m_00h = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
         return get_ytday_ma10_60m_00h
 
     def get_ytday_ma20_240m_00h(self):
@@ -171,10 +171,10 @@ class upbit_ticker_data:
             get_ytday_ma20_60m_00h = df['close'].mean()
             # 데이터 전처리 끝
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             get_ytday_ma20_60m_00h = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
         return get_ytday_ma20_60m_00h
 
     ############ 이동평균 끝 #################
@@ -215,10 +215,10 @@ class upbit_ticker_data:
             df['noise'] = 1 - abs(df['open'] - df['close']) / (df['high_1d'] - df['low_1d'])
             noise_20day = df['noise'].rolling(20).mean().iloc[-1]
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             noise_20day = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
 
         return noise_20day
 
@@ -268,10 +268,10 @@ class upbit_ticker_data:
             df['noise'] = 1 - abs(df['open'] - df['close']) / (df['high_1d'] - df['low_1d'])
             noise_30day = df['noise'].rolling(30).mean().iloc[-1]
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             noise_30day = 0
-            print("%s: %s 신규코인 데이터 부족!!!" % (this_function_name, self.ticker))
+            # print("%s: %s 신규코인 데이터 부족!!!" % (this_function_name, self.ticker))
         return noise_30day
 
     def get_noise_30day_now(self):
@@ -323,10 +323,10 @@ class upbit_ticker_data:
             df['noise'] = 1 - abs(df['open'] - df['close']) / (df['high_1d'] - df['low_1d'])
             noise_30day = df['noise'].rolling(30).mean().iloc[-1]
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             noise_30day = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
 
         return noise_30day
 
@@ -358,10 +358,10 @@ class upbit_ticker_data:
             # 5일간의 변동성값 평균
             volatility_5days = df['volatility'].mean()
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             volatility_5days = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
         return volatility_5days
 
     def get_volatility_5days_now(self):
@@ -392,10 +392,10 @@ class upbit_ticker_data:
             volatility_5days = df['volatility'].mean()
 
         else:
-            this_function_name = inspect.stack()[0][3]  # 함수이름 얻기
+            # this_function_name = inspect.stack()[0][3]  # 함수이름 얻기
             # df.to_excel(this_function_name + ".xlsx", sheet_name=this_function_name)
             volatility_5days = 0
-            print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
+            # print("%s, %s 신규코인 데이터 부족" % (this_function_name, self.ticker))
 
         return volatility_5days
 
@@ -513,10 +513,10 @@ class upbit_ticker_data:
                              1)
 
         # # 엑셀저장
-        now = datetime.datetime.today().strftime("%Y년%m월%d일_%H시")  # 현재시간 얻기
-        this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
-        df.to_excel(this_function_name + f'{now}' + ".xlsx",
-                    sheet_name=this_function_name)
+        # now = datetime.datetime.today().strftime("%Y년%m월%d일_%H시")  # 현재시간 얻기
+        # this_function_name = inspect.stack()[0][3]  # 함수이름 값 얻기
+        # df.to_excel(this_function_name + f'{now}' + ".xlsx",
+        #             sheet_name=this_function_name)
 
         # 누적 수익률 계산
         ror = df['ror'].cumprod()[-2]
