@@ -1,7 +1,8 @@
+# 출격용
 # 변동성돌파 + 5일이동평균 전략, 서버실행
 # 0시 기준 + 현재가가 5일 이동평균선을 넘는 코인만 매수
 #
-# 최종업데이트 : 2022 01.03
+# 최종업데이트 : 2022 01.24
 title = "v200_변동성돌파 + 5일이동평균 전략, (감시가, 목표변동성)"
 
 import time
@@ -16,7 +17,7 @@ access = config.UPBIT_ACCESS
 secret = config.UPBIT_SECRET
 
 # 슬랙 봇 준비
-token = config.SLACK_TOKEN
+token = config.SLACK_TOKEN_COIN_BOT
 client = slack.WebClient(token=token)
 
 ################# PARAM ################################
